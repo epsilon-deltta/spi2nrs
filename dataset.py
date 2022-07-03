@@ -42,4 +42,42 @@ class Spi10_2nrs(torch.utils.data.Dataset):
         return len(self.df)
     
     
-  
+import torch
+from torch.nn import functional as F
+import pandas as pd
+import vitaldb
+
+class PPGDT(torch.utils.data.Dataset):
+    def __init__(self,vital_dir='../data/vital2/',op_path='../data/vital2/dd_all_simple.csv'):
+        
+        flist_ = os.listdir(vital_dir)
+        flist_ = [ x for x in flist_ if x.endswith('.vital')]
+
+        op = pd.read_csv(op_path)
+        op = op[['key','pacu_nrs']]
+
+        flist = []
+        for key in op.key:
+
+            for f in flist_:
+                if f.startswith(key):
+                    flist.append(f)
+
+        self.fpaths = [os.path.join(dir_path,path) for path in flist]
+        self.labels = op.pacu_nrs.to_list()
+        
+    def __getitem__(self,idx):
+
+        cols = ['Intellivue/PLETH']
+        pl1 = vitaldb.VitalFile(self.fpaths[idx],cols)
+
+        x = pl1.get_track_samples(cols[0],1)
+        x = torch.tensor(x)
+
+        y = self.labels[idx]
+        y = torch.tensor(y)
+        return x,y
+    
+    def __len__(self):
+        return len(self.fpaths)
+    
