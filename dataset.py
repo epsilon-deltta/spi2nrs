@@ -41,7 +41,6 @@ class Spi10_2nrs(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.df)
     
-    
 import torch
 from torch.nn import functional as F
 import pandas as pd
@@ -71,7 +70,7 @@ class PPGDT(torch.utils.data.Dataset):
         cols = ['Intellivue/PLETH']
         pl1 = vitaldb.VitalFile(self.fpaths[idx],cols)
 
-        x = pl1.get_track_samples(cols[0],1)
+        x = pl1.get_track_samples(cols[0],1/30)[:30*60*50] # 30*60*50
         x = torch.tensor(x)
 
         y = self.labels[idx]
