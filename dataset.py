@@ -40,11 +40,13 @@ class Spi10_2nrs(torch.utils.data.Dataset):
     
     def __len__(self):
         return len(self.df)
-    
+
 import torch
 from torch.nn import functional as F
 import pandas as pd
 import vitaldb
+import numpy as np
+import os
 
 class PPGDT(torch.utils.data.Dataset):
     def __init__(self,vital_dir='../data/vital2/',op_path='../data/vital2/dd_all_simple.csv'):
@@ -62,21 +64,29 @@ class PPGDT(torch.utils.data.Dataset):
                 if f.startswith(key):
                     flist.append(f)
 
-        self.fpaths = [os.path.join(dir_path,path) for path in flist]
-        self.labels = op.pacu_nrs.to_list()
+        self.fpaths = [os.path.join(vital_dir,path) for path in flist]
+        self.labels = op.pacu_nrs.map(lambda x: nrs2class(x,2))
         
     def __getitem__(self,idx):
 
         cols = ['Intellivue/PLETH']
-        pl1 = vitaldb.VitalFile(self.fpaths[idx],cols)
+        vf = vitaldb.VitalFile(self.fpaths[idx],cols)
 
-        x = pl1.get_track_samples(cols[0],1/30)[:30*60*50] # 30*60*50
+        x = vf.get_track_samples(cols[0],1/30)[:30*60*50] # 30*60*50
+        x = self.interpolate(x)
         x = torch.tensor(x)
-
-        y = self.labels[idx]
-        y = torch.tensor(y)
+        
+        y = torch.tensor([self.labels[idx]])
+        y = F.one_hot(y,num_classes=2)
         return x,y
     
     def __len__(self):
         return len(self.fpaths)
-    
+
+    def interpolate(self,x :np.ndarray,mode='nearest')-> np.ndarray:
+        
+        if mode == 'nearest':
+            x = pd.DataFrame(x,columns=['x'])
+            x = x.fillna(method='ffill').fillna(method='bfill')
+            x = x['x'].to_numpy()
+        return x
