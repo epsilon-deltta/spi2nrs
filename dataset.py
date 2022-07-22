@@ -21,7 +21,7 @@ def nrs2class(x,pain_type=3):
     return pain
 
 class Spi10_2nrs(torch.utils.data.Dataset):
-    def __init__(self,file_path='../data/spi10_2nrs.csv'):
+    def __init__(self,file_path='../data/spi10_2nrs.csv',nrs2label=False):
         df = pd.read_csv(file_path)
         del df['id']
         df['10min'] = df['10min'].map(float)
@@ -29,7 +29,8 @@ class Spi10_2nrs(torch.utils.data.Dataset):
         df['30min'] = df['30min'].map(float)
         df['40min'] = df['40min'].map(float)
         df['50min'] = df['50min'].map(float)
-        df['pacu_nrs'] = df.pacu_nrs.map(lambda x: nrs2class(x,2))
+        if nrs2label:
+            df['pacu_nrs'] = df.pacu_nrs.map(lambda x: nrs2class(x,2))
         self.df     = df
 
     def __getitem__(self,idx):
@@ -37,7 +38,11 @@ class Spi10_2nrs(torch.utils.data.Dataset):
         x = x.to(torch.float32)
         
         y = torch.tensor([int(self.df.iloc[idx][-1])])
+        print('0',y)
         y = F.one_hot(y,num_classes=2)
+        print('one_hot',y)
+        y = y.reshape(-1).to(torch.float32)
+        print('reshape',y)
         return x,y
     
     def __len__(self):
