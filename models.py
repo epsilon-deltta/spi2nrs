@@ -8,11 +8,11 @@ class Wave2tf(torch.nn.Module):
         # feature_extraction
         bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
         self.wave2vec = bundle.get_model()
-    
+        
         encoder_layer = nn.TransformerEncoderLayer(d_model=32, nhead=4)
         tf_enc = nn.TransformerEncoder(encoder_layer, num_layers=3)
 
-
+        
         conv1d_0 = nn.Conv1d(281,140,3)
         gelu_0 = nn.GELU()
         bn_0 = nn.BatchNorm1d(140)

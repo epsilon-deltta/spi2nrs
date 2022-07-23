@@ -38,11 +38,10 @@ class Spi10_2nrs(torch.utils.data.Dataset):
         x = x.to(torch.float32)
         
         y = torch.tensor([int(self.df.iloc[idx][-1])])
-        print('0',y)
+
         y = F.one_hot(y,num_classes=2)
-        print('one_hot',y)
         y = y.reshape(-1).to(torch.float32)
-        print('reshape',y)
+        
         return x,y
     
     def __len__(self):
