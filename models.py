@@ -1,6 +1,34 @@
 import torch
 from torch import nn
 import torchaudio
+
+# Simple spi10 model
+def get_lin_block(in_node,out_node):
+    lin = nn.Linear(in_node,out_node)
+    act = nn.GELU()
+    bat = nn.BatchNorm1d(out_node)
+    return nn.Sequential(lin,act,bat)
+
+class SimpleSPI10(torch.nn.Module):
+    def __init__(self,in_node=5,n_blks=4):
+        super(SimpleSPI10,self).__init__()
+
+        self.lin_blocks = nn.ModuleList()
+        in_node= 5
+        n_blks = 4
+        for i in range(n_blks):
+            self.lin_blocks.add_module(str(i)+'_0',get_lin_block(in_node*(2**i),in_node*(2**(i+1))))
+
+        for i in range(n_blks-1,-1,-1):
+            self.lin_blocks.add_module(str(i)+'_1',get_lin_block(in_node*(2**(i+1)),in_node*(2**(i))))
+        self.fc = nn.Linear(in_node,2)
+        
+    def forward(self,x):
+        for lin in self.lin_blocks:
+            x = lin(x)
+        x = self.fc(x)
+        return x
+
 class Wave2tf(torch.nn.Module):
     def __init__(self):
         super(Wave2tf,self).__init__()
